@@ -71,7 +71,7 @@ function (*)(a::Bra, b::Bra)::Bra
     return ktb(btk(a)*btk(b))
 end 
 
-# matrix = operator
+# matrix = operator (TODO: error with 1x1 Opr)
 mutable struct Opr
     vals::Array{Complex, 2}
 end 
@@ -163,6 +163,27 @@ function (*)(a::Opr, b::Opr)::Opr
     return Opr(arr)
 end
 
+# matrix scalar mult
+function (*)(a::Complex, b::Opr)::Opr
+    dim1::Int64 = size(b.vals,1)
+    dim2::Int64 = size(b.vals,2)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, dim1, dim2)
+    for i = 1:dim1
+        for j = 1:dim2
+            arr[i,j] = a * b.vals[i,j]
+        end 
+    end
+    return Opr(arr)
+
+
+    ### This code errors ###
+    # scalarOpr::Opr = Opr([a])
+    # return scalarOpr*b 
+    ### Test with ###
+    # println(Opr([Complex(1,0)]))
+    # println(Opr([Complex(1,0) Complex(2,0)]))
+end 
+
 # create 2x2 operator
 function mat2(a::Complex, b::Complex, c::Complex, d::Complex)::Opr
     return Opr([a b; c d])
@@ -173,6 +194,13 @@ function eye2()::Opr
     a::Complex = Complex(1,0)
     b::Complex = Complex(0,0)
     return mat2(a, b, b, a)
+end
+
+# create hadamard gate 
+function had2()::Opr
+    nrm::Complex = Complex(1/sqrt(2), 0)
+    op::Opr = mat2(Complex(1,0), Complex(1,0), Complex(1,0), Complex(-1,0))
+    return nrm*op
 end
 
 # # qubit = impure states are 
@@ -210,3 +238,4 @@ b = Complex(4,6)
 # println(Bra(x)*z)
 # println(Opr([Complex(1,0) Complex(2,0); Complex(3,0) Complex(4,0); Complex(1,0) Complex(0,0)])*Opr([Complex(0,0) Complex(5,0) Complex(2,0); Complex(6,0) Complex(7,0) Complex(3,0)]))
 # println(eye2()*eye2())
+println(had2()*Ket([Complex(0,0), Complex(1,0)]))
