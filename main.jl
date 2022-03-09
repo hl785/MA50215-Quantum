@@ -142,7 +142,38 @@ function (*)(a::Opr, b::Ket)::Ket
     return Ket(vec(c.vals))
 end 
 
+# tensor operators
+function (*)(a::Opr, b::Opr)::Opr
+    dimA1::Int64 = size(a.vals,1)
+    dimA2::Int64 = size(a.vals,2)
+    dimB1::Int64 = size(b.vals,1)
+    dimB2::Int64 = size(b.vals,2)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, dimA1*dimB1, dimA2*dimB2)
 
+    for i = 1:dimA1
+        for k = 1:dimB1
+            for j = 1:dimA2
+                for l = 1:dimB2
+                    arr[(i-1)*dimB1+k, (j-1)*dimB2+l] = a.vals[i,j]*b.vals[k,l]
+                end
+            end
+        end
+    end
+
+    return Opr(arr)
+end
+
+# create 2x2 operator
+function mat2(a::Complex, b::Complex, c::Complex, d::Complex)::Opr
+    return Opr([a b; c d])
+end
+
+# create 2x2 identity
+function eye2()::Opr
+    a::Complex = Complex(1,0)
+    b::Complex = Complex(0,0)
+    return mat2(a, b, b, a)
+end
 
 # # qubit = impure states are 
 # mutable struct MonoQubit
@@ -150,7 +181,7 @@ end
 #     ket::Array{Ket, numStates}
 # end 
 
-# TODO: bra/ket constructor, tensor(func,func) = func
+# TODO: bra/ket constructor
 
 a = Complex(1,2)
 b = Complex(4,6)
@@ -177,3 +208,5 @@ b = Complex(4,6)
 # println(matmul(Opr([Complex(1,0) Complex(0,-1); Complex(1,1) Complex(4,-1)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0)])))
 # println(matmul(Opr([Complex(1,0) Complex(0,0) Complex(0,0); Complex(0,0) Complex(1,0) Complex(0,0)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0); Complex(1,-3) Complex(6,7)])))
 # println(Bra(x)*z)
+# println(Opr([Complex(1,0) Complex(2,0); Complex(3,0) Complex(4,0); Complex(1,0) Complex(0,0)])*Opr([Complex(0,0) Complex(5,0) Complex(2,0); Complex(6,0) Complex(7,0) Complex(3,0)]))
+# println(eye2()*eye2())
