@@ -1,0 +1,147 @@
+import Base: ==, +, -, *, /, \, inv, ^, <, <=, <<, >>, %, ÷
+
+mutable struct Complex
+    real::Float64
+    imag::Float64
+    # way of getting +=, -=, *=, /= ???
+end
+
+function (+)(a::Complex, b::Complex)::Complex
+    return Complex(a.real + b.real, a.imag + b.imag)
+end 
+
+function (*)(a::Complex, b::Complex)::Complex
+    return Complex((a.real * b.real) - (a.imag * b.imag), (a.real * b.imag) + (a.imag * b.real))
+end 
+
+# row vector = bra
+mutable struct Bra
+    vals::Array{Complex, 1}
+end 
+
+# col vector = ket
+mutable struct Ket
+    vals::Array{Complex, 1}
+end 
+
+# bra to ket
+function btk(a::Bra)::Ket
+    return Ket(a.vals)
+end
+
+# ket to bra
+function ktb(a::Ket)::Bra
+    return Bra(a.vals)
+end
+
+# dot product 
+function (*)(a::Bra, b::Ket)::Complex
+    @assert size(a.vals,1) == size(b.vals,1) "Dimensions of dot product disagree!"
+    elemMult::Array{Complex, 1} = a.vals .* b.vals
+    sums::Complex = sum(elemMult)
+    return sums
+end 
+
+# ket element wise mult 
+function (*)(a::Complex, b::Ket)::Ket
+    out::Array{Complex, 1} = []
+    for i in b.vals
+        out = vcat(out, a * i)
+    end
+    return Ket(out)
+end 
+
+# bra element wise mult 
+function (*)(a::Complex, b::Bra)::Bra
+    return ktb(a * btk(b))
+end 
+
+# tensor kets 
+function (*)(a::Ket, b::Ket)::Ket
+    out::Array{Complex, 1} = []
+    for i in a.vals
+        temp::Ket = i*b
+        out = vcat(out, temp.vals)
+    end
+    return Ket(out)
+end 
+
+# tensor bras 
+function (*)(a::Bra, b::Bra)::Bra
+    return ktb(btk(a)*btk(b))
+end 
+
+# matrix = operator
+mutable struct Opr
+    vals::Array{Complex, 2}
+end 
+
+# tensor ket and bra 
+function (*)(a::Ket, b::Bra)::Opr
+    dim1::Int64 = size(a.vals,1)
+    dim2::Int64 = size(b.vals,1)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, dim1, dim2)
+    for i = 1:dim1
+        for j = 1:dim2
+            arr[i,j] = a.vals[i] * b.vals[j]
+        end 
+    end
+    return Opr(arr)
+end 
+
+# matrix mult
+function matmul(a::Opr, b::Opr)::Opr
+    @assert size(a.vals,2) == size(b.vals,1) "Dimensions of matrix product disagree!"
+    dim1::Int64 = size(a.vals,1)
+    dim2::Int64 = size(b.vals,2)
+    dimInt::Int64 = size(a.vals,2)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, dim1, dim2)
+    for i = 1:dim1
+        for j = 1:dim2
+            sum::Complex = Complex(0,0)
+            for k = 1:dimInt
+                sum = sum + (a.vals[i,k]*b.vals[k,j])
+            end
+            arr[i,j] = sum
+        end 
+    end
+    return Opr(arr)
+end
+
+function (*)(a::Bra, b::Opr)::Bra
+
+
+
+# # qubit = impure states are 
+# mutable struct MonoQubit
+#     numStates::Int64
+#     ket::Array{Ket, numStates}
+# end 
+
+# TODO: bra/ket constructor, bra <=> ket, func on bra/ket, func on MonoQubit,
+#  tensor(bra,ket) = func, tensor(ket,ket) = ket, tensor(func,func) = func
+
+a = Complex(1,2)
+b = Complex(4,6)
+# println(a+b)
+# println(a*b)
+ x = [a, b]
+# y = Bra(x)
+# x = [a+b, a*b]
+#  z = Ket(x)
+# dotProd = y*z
+# println(y)
+# println(z)
+# println(dotProd)
+# elemWiseMult = a*z
+# println(elemWiseMult)
+# println(Ket([Complex(0,1)])*z)
+# z = Bra(x)
+# println(Bra([Complex(1,0),Complex(0,1)])*z)
+# z = Opr([a b; b a])
+# println(z)
+# z = Ket(x) * Bra(x)
+# println(z)
+# println(Ket([Complex(1,0), Complex(2,0), Complex(3,0)]) * Bra([Complex(4,0), Complex(5,0)]))
+# println(matmul(Opr([Complex(1,0) Complex(0,-1); Complex(1,1) Complex(4,-1)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0)])))
+# println(matmul(Opr([Complex(1,0) Complex(0,0) Complex(0,0); Complex(0,0) Complex(1,0) Complex(0,0)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0); Complex(1,-3) Complex(6,7)])))
