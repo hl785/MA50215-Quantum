@@ -100,7 +100,7 @@ function matmul(a::Opr, b::Opr)::Opr
         for j = 1:dim2
             sum::Complex = Complex(0,0)
             for k = 1:dimInt
-                sum = sum + (a.vals[i,k]*b.vals[k,j])
+                sum = sum + (a.vals[i,k]*b.vals[k,j])       # Use dot prod?
             end
             arr[i,j] = sum
         end 
@@ -108,7 +108,39 @@ function matmul(a::Opr, b::Opr)::Opr
     return Opr(arr)
 end
 
+# bra to operator
+function bto(a::Bra)::Opr
+    dim1::Int64 = size(a.vals,1)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, 1, dim1)
+    for i = 1:dim1
+        arr[1,i] = a.vals[i]
+    end
+    return Opr(arr)
+end
+
+# ket to operator
+function kto(a::Ket)::Opr
+    dim1::Int64 = size(a.vals,1)
+    arr::Array{Complex, 2} = Array{Complex, 2}(undef, dim1, 1)
+    for i = 1:dim1
+        arr[i,1] = a.vals[i]
+    end
+    return Opr(arr)
+end
+
+# row matrix mult
 function (*)(a::Bra, b::Opr)::Bra
+    aOpr::Opr = bto(a)
+    c::Opr = matmul(aOpr,b)
+    return Bra(vec(c.vals))
+end 
+
+# matrix col mult
+function (*)(a::Opr, b::Ket)::Ket
+    bOpr::Opr = kto(b)
+    c::Opr = matmul(a,bOpr)
+    return Ket(vec(c.vals))
+end 
 
 
 
@@ -118,8 +150,7 @@ function (*)(a::Bra, b::Opr)::Bra
 #     ket::Array{Ket, numStates}
 # end 
 
-# TODO: bra/ket constructor, bra <=> ket, func on bra/ket, func on MonoQubit,
-#  tensor(bra,ket) = func, tensor(ket,ket) = ket, tensor(func,func) = func
+# TODO: bra/ket constructor, tensor(func,func) = func
 
 a = Complex(1,2)
 b = Complex(4,6)
@@ -145,3 +176,4 @@ b = Complex(4,6)
 # println(Ket([Complex(1,0), Complex(2,0), Complex(3,0)]) * Bra([Complex(4,0), Complex(5,0)]))
 # println(matmul(Opr([Complex(1,0) Complex(0,-1); Complex(1,1) Complex(4,-1)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0)])))
 # println(matmul(Opr([Complex(1,0) Complex(0,0) Complex(0,0); Complex(0,0) Complex(1,0) Complex(0,0)]), Opr([Complex(0,1) Complex(1,-1); Complex(2,-3) Complex(4,0); Complex(1,-3) Complex(6,7)])))
+# println(Bra(x)*z)
