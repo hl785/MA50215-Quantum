@@ -26,12 +26,24 @@ end
 
 # bra to ket
 function btk(a::Bra)::Ket
-    return Ket(a.vals)
+    newVals::Array{Complex, 1} = a.vals
+    dim1 = size(newVals,1)
+    for i = 1:dim1
+        oldVal::Complex = newVals[i]
+        newVals[i] = Complex(oldVal.real, -oldVal.imag)
+    end
+    return Ket(newVals)
 end
 
 # ket to bra
 function ktb(a::Ket)::Bra
-    return Bra(a.vals)
+    newVals::Array{Complex, 1} = a.vals
+    dim1 = size(newVals,1)
+    for i = 1:dim1
+        oldVal::Complex = newVals[i]
+        newVals[i] = Complex(oldVal.real, -oldVal.imag)
+    end
+    return Bra(newVals)
 end
 
 # dot product 
