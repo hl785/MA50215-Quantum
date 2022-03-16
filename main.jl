@@ -27,7 +27,7 @@ end
 # bra to ket
 function btk(a::Bra)::Ket
     newVals::Array{Complex, 1} = a.vals
-    dim1 = size(newVals,1)
+    dim1::Int64 = size(newVals,1)
     for i = 1:dim1
         oldVal::Complex = newVals[i]
         newVals[i] = Complex(oldVal.real, -oldVal.imag)
@@ -38,7 +38,7 @@ end
 # ket to bra
 function ktb(a::Ket)::Bra
     newVals::Array{Complex, 1} = a.vals
-    dim1 = size(newVals,1)
+    dim1::Int64 = size(newVals,1)
     for i = 1:dim1
         oldVal::Complex = newVals[i]
         newVals[i] = Complex(oldVal.real, -oldVal.imag)
@@ -237,13 +237,43 @@ function paZ2()::Opr
     return mat2(a, b, b, c)
 end
 
-# # qubit = impure states are 
-# mutable struct MonoQubit
-#     numStates::Int64
-#     ket::Array{Ket, numStates}
-# end 
+# prob measure Ket vector
+function pMeas(a::Ket)::Array{Float64, 1}
+    dim1::Int64 = size(a.vals,1)
+    probs::Array{Float64, 1} = zeros(Float64, dim1)
+    for i = 1:dim1
+        val::Complex = a.vals[i]
+        probs[i] = sqrt(val.real*val.real + val.imag*val.imag)
+    end
+    return probs
+end
 
-# TODO: bra/ket constructor
+# prob measure Bra vector
+function pMeas(a::Bra)::Array{Float64, 1}
+    return pMeas(btk(a))
+end
+
+# single (most likely) measure Ket vector
+function sMeas(a::Ket)::Int64
+    dim1::Int64 = size(a.vals,1)
+    currentProb::Float64 = 0.0
+    highestProb::Float64 = 0.0
+    maxI::Int64 = -1    # for error detection (-ve => error)
+    for i = 1:dim1
+        val::Complex = a.vals[i]
+        currentProb = sqrt(val.real*val.real + val.imag*val.imag)
+        if (currentProb > highestProb)
+            maxI = i
+            highestProb = currentProb
+        end
+    end
+    return maxI
+end
+
+# single (most likely) measure Bra vector
+function sMeas(a::Bra)::Int64
+    return sMeas(btk(a))
+end
 
 a = Complex(1,2)
 b = Complex(4,6)
