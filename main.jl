@@ -275,11 +275,15 @@ function sMeas(a::Bra)::Int64
     return sMeas(btk(a))
 end
 
-a = Complex(1,2)
-b = Complex(4,6)
+function oprExp(a::Opr)::Opr
+    return Opr(exp(a.vals))
+end
+
+# a = Complex(1,2)
+# b = Complex(4,6)
 # println(a+b)
 # println(a*b)
- x = [a, b]
+#  x = [a, b]
 # y = Bra(x)
 # x = [a+b, a*b]
 #  z = Ket(x)
@@ -303,12 +307,13 @@ b = Complex(4,6)
 # println(Opr([Complex(1,0) Complex(2,0); Complex(3,0) Complex(4,0); Complex(1,0) Complex(0,0)])*Opr([Complex(0,0) Complex(5,0) Complex(2,0); Complex(6,0) Complex(7,0) Complex(3,0)]))
 # println(eye2()*eye2())
 # println(had2()*Ket([Complex(0,0), Complex(1,0)]))
-x = Ket([Complex(1,0), Complex(0,0)])
-y = Ket([Complex(0,0), Complex(0,1)])
-z = Ket([Complex(0,0), Complex(1,0)])
-xyz = (x*y)*z
-println(xyz)
-xyz = x*(y*z)
-println(xyz)
-xyz = x*y*z
-println(xyz)
+# x = Ket([Complex(1,0), Complex(0,0)])
+# y = Ket([Complex(0,0), Complex(0,1)])
+# z = Ket([Complex(0,0), Complex(1,0)])
+# xyz = (x*y)*z
+# println(xyz)
+# xyz = x*(y*z)
+# println(xyz)
+# xyz = x*y*z
+# println(xyz)
+println(oprExp(eye2()))
