@@ -74,20 +74,7 @@ end
 # matrix mult
 function matmul(a::Opr, b::Opr)::Opr
     @assert size(a.vals,2) == size(b.vals,1) "Dimensions of matrix product disagree!"
-    dim1::Int64 = size(a.vals,1)
-    dim2::Int64 = size(b.vals,2)
-    dimInt::Int64 = size(a.vals,2)
-    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, dim1, dim2)
-    for i = 1:dim1
-        for j = 1:dim2
-            sum::ComplexF64 = ComplexF64(0,0)
-            for k = 1:dimInt
-                sum = sum + (a.vals[i,k]*b.vals[k,j])       # Use dot prod?
-            end
-            arr[i,j] = sum
-        end 
-    end
-    return Opr(arr)
+    return Opr(a.vals * b.vals)
 end
 
 # bra to operator
@@ -277,7 +264,7 @@ end
 # println(xyz)
 # xyz = x*y*z
 # println(xyz)
-println(oprExp(eye2()))
+# println(oprExp(eye2()))
 # println(ComplexF64(1,0)*ComplexF64(1,1))
-println(conj([ComplexF64(1,2), ComplexF64(0,1)]))
-println(ComplexF64(1,-2).*Ket([ComplexF64(1,2), ComplexF64(0,1)]).vals)
+# println(conj([ComplexF64(1,2), ComplexF64(0,1)]))
+# println(ComplexF64(1,-2).*Ket([ComplexF64(1,2), ComplexF64(0,1)]).vals)
