@@ -12,24 +12,12 @@ end
 
 # bra to ket
 function btk(a::Bra)::Ket
-    newVals::Array{ComplexF64, 1} = a.vals
-    dim1::Int64 = size(newVals,1)
-    for i = 1:dim1
-        oldVal::ComplexF64 = newVals[i]
-        newVals[i] = ComplexF64(oldVal.real, -oldVal.imag)
-    end
-    return Ket(newVals)
+    return Ket(conj(a.vals))
 end
 
 # ket to bra
 function ktb(a::Ket)::Bra
-    newVals::Array{ComplexF64, 1} = a.vals
-    dim1::Int64 = size(newVals,1)
-    for i = 1:dim1
-        oldVal::ComplexF64 = newVals[i]
-        newVals[i] = ComplexF64(oldVal.real, -oldVal.imag)
-    end
-    return Bra(newVals)
+    return Bra(conj(a.vals))
 end
 
 # dot product 
@@ -42,16 +30,12 @@ end
 
 # ket element wise mult 
 function (*)(a::ComplexF64, b::Ket)::Ket
-    out::Array{ComplexF64, 1} = []
-    for i in b.vals
-        out = vcat(out, a * i)
-    end
-    return Ket(out)
+    return Ket(a .* b.vals)
 end 
 
 # bra element wise mult 
 function (*)(a::ComplexF64, b::Bra)::Bra
-    return ktb(a * btk(b))
+    return Bra(a .* b.vals)
 end 
 
 # tensor kets 
@@ -163,18 +147,9 @@ end
 
 # matrix scalar mult
 function (*)(a::ComplexF64, b::Opr)::Opr
-    dim1::Int64 = size(b.vals,1)
-    dim2::Int64 = size(b.vals,2)
-    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, dim1, dim2)
-    for i = 1:dim1
-        for j = 1:dim2
-            arr[i,j] = a * b.vals[i,j]
-        end 
-    end
-    return Opr(arr)
+    return Opr(a .* b.vals)
 
-
-    ### This code errors ###
+    ### Check code errors ###
     # scalarOpr::Opr = Opr([a])
     # return scalarOpr*b 
     ### Test with ###
@@ -304,3 +279,5 @@ end
 # println(xyz)
 println(oprExp(eye2()))
 # println(ComplexF64(1,0)*ComplexF64(1,1))
+println(conj([ComplexF64(1,2), ComplexF64(0,1)]))
+println(ComplexF64(1,-2).*Ket([ComplexF64(1,2), ComplexF64(0,1)]).vals)
