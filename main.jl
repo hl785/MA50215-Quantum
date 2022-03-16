@@ -215,6 +215,28 @@ function had2()::Opr
     return nrm*op
 end
 
+# create pauli X gate 
+function paX2()::Opr
+    a::Complex = Complex(0,0)
+    b::Complex = Complex(1,0)
+    return mat2(a, b, b, a)
+end
+
+# create pauli Y gate 
+function paY2()::Opr
+    a::Complex = Complex(0,0)
+    b::Complex = Complex(0,1)
+    return mat2(a, b, b, a)
+end
+
+# create pauli Z gate 
+function paZ2()::Opr
+    a::Complex = Complex(1,0)
+    b::Complex = Complex(0,0)
+    c::Complex = Complex(-1,0)
+    return mat2(a, b, b, c)
+end
+
 # # qubit = impure states are 
 # mutable struct MonoQubit
 #     numStates::Int64
