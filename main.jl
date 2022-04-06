@@ -135,13 +135,6 @@ end
 # matrix scalar mult
 function (*)(a::ComplexF64, b::Opr)::Opr
     return Opr(a .* b.vals)
-
-    ### Check code errors ###
-    # scalarOpr::Opr = Opr([a])
-    # return scalarOpr*b 
-    ### Test with ###
-    # println(Opr([ComplexF64(1,0)]))
-    # println(Opr([ComplexF64(1,0) ComplexF64(2,0)]))
 end 
 
 # create 2x2 operator
@@ -262,6 +255,16 @@ function CNot(cont::Int64, targ::Int64, dim::Int64)::Opr
     return Opr(lhs.vals + rhs.vals)
 end
 
+# TODO: check is real (i.e. return Float64)
+function oprExpectation(a::Opr, b::Ket)::ComplexF64
+    return ktb(b)*(a*b)
+end
+
+# TODO: check is real (i.e. return Float64)
+function oprExpectation(a::Opr, b::Bra)::ComplexF64
+    return oprExpectation(a,btk(b))
+end
+
 # a = ComplexF64(1,2)
 # b = ComplexF64(4,6)
 # println(a+b)
@@ -306,3 +309,4 @@ end
 # println(size(scalarArray(ComplexF64(1,0)).vals))
 # println(CNot(0,1,2))
 # println(rotGate(eye2(), Float64(pi, RoundDown)))
+# println(oprExpectation(paZ2(), rotGate(paX2(), 1.0)*Ket([ComplexF64(1,0), ComplexF64(0,0)])), cos(1.0))
