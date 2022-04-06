@@ -191,7 +191,7 @@ function pMeas(a::Ket)::Array{Float64, 1}
     probs::Array{Float64, 1} = zeros(Float64, dim1)
     for i = 1:dim1
         val::ComplexF64 = a.vals[i]
-        probs[i] = sqrt(val.real*val.real + val.imag*val.imag)
+        probs[i] = val.real*val.real + val.imag*val.imag
     end
     return probs
 end
@@ -204,18 +204,16 @@ end
 # single (most likely) measure Ket vector
 function sMeas(a::Ket)::Int64
     dim1::Int64 = size(a.vals,1)
-    currentProb::Float64 = 0.0
-    highestProb::Float64 = 0.0
-    maxI::Int64 = -1    # for error detection (-ve => error)
+    probs::Array{Float64, 1} = pMeas(a)
+    rv::Float64 = rand()
     for i = 1:dim1
-        val::ComplexF64 = a.vals[i]
-        currentProb = sqrt(val.real*val.real + val.imag*val.imag)
-        if (currentProb > highestProb)
-            maxI = i
-            highestProb = currentProb
+        rv = rv - probs[i]
+        if rv < 0.0
+            return i - 1
         end
     end
-    return maxI
+    @assert false "Measure Error"
+    return -1
 end
 
 # single (most likely) measure Bra vector
