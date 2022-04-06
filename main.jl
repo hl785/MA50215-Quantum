@@ -225,6 +225,33 @@ function oprExp(a::Opr)::Opr
     return Opr(exp(a.vals))
 end
 
+function scalarArray(a::ComplexF64)::Opr
+    arr::Array{Float64, 2} = [a][:,:]       # Hack to allow 1 by 1 matrix
+    return Opr(arr)
+end
+
+function CNot(cont::Int64, targ::Int64, dim::Int64)::Opr
+    @assert cont != targ "Control and target can not be the same Qbit"
+    @assert cont < dim "Control not in register"
+    @assert targ < dim "Target not in register"
+    lhs = scalarArray(ComplexF64(1,0))
+    rhs = scalarArray(ComplexF64(1,0))
+    
+    for i = 0:(dim - 1)
+        if (i == cont)
+            lhs = lhs*Opr(0.5 * (eye2().vals + paZ2().vals))
+            rhs = rhs*Opr(0.5 * (eye2().vals - paZ2().vals))
+        elseif (i == targ)
+            lhs = lhs*eye2()
+            rhs = rhs*paX2()
+        else
+            lhs = lhs*eye2()
+            rhs = rhs*eye2()
+        end
+    end
+    return Opr(lhs.vals + rhs.vals)
+end
+
 # a = ComplexF64(1,2)
 # b = ComplexF64(4,6)
 # println(a+b)
@@ -266,3 +293,5 @@ end
 # println(ComplexF64(1,0)*ComplexF64(1,1))
 # println(conj([ComplexF64(1,2), ComplexF64(0,1)]))
 # println(ComplexF64(1,-2).*Ket([ComplexF64(1,2), ComplexF64(0,1)]).vals)
+# println(size(scalarArray(ComplexF64(1,0)).vals))
+# println(CNot(0,1,2))
