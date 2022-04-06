@@ -226,8 +226,18 @@ function oprExp(a::Opr)::Opr
 end
 
 function scalarArray(a::ComplexF64)::Opr
-    arr::Array{Float64, 2} = [a][:,:]       # Hack to allow 1 by 1 matrix
+    arr::Array{ComplexF64, 2} = [a][:,:]       # Hack to allow 1 by 1 matrix
     return Opr(arr)
+end
+
+function rotGate(a::Opr, ang::ComplexF64)::Opr
+    out = scalarArray(ComplexF64(0,-0.5)*ang)
+    out = out * a
+    return oprExp(out)
+end
+
+function rotGate(a::Opr, ang::Float64)::Opr
+    return rotGate(a, ComplexF64(ang,0))
 end
 
 function CNot(cont::Int64, targ::Int64, dim::Int64)::Opr
@@ -295,3 +305,4 @@ end
 # println(ComplexF64(1,-2).*Ket([ComplexF64(1,2), ComplexF64(0,1)]).vals)
 # println(size(scalarArray(ComplexF64(1,0)).vals))
 # println(CNot(0,1,2))
+# println(rotGate(eye2(), Float64(pi, RoundDown)))
