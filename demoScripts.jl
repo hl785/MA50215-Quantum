@@ -19,7 +19,7 @@ using Plots
 println("\nTest CNot gate on non neighboring gates:\n") # Print
 println("(Display graph if run through repl)")
 println(broadcast(abs, CNot(2,1,3).vals))
-heatmap(broadcast(abs, CNot(2,1,3).vals))
+heatmap(broadcast(abs, CNot(2,1,3).vals), yflip = true)
 #----------------------------------------------------------------------------------------------------
 
 # a = ComplexF64(1,2)
