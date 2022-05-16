@@ -15,6 +15,12 @@ println("True result: ", trueRes)
 println("Quan result: ", testRes)
 println("Error: ", abs(trueRes - testRes))
 #----------------------------------------------------------------------------------------------------
+using Plots
+println("\nTest CNot gate on non neighboring gates:\n") # Print
+println("(Display graph if run through repl)")
+println(broadcast(abs, CNot(2,1,3).vals))
+heatmap(broadcast(abs, CNot(2,1,3).vals))
+#----------------------------------------------------------------------------------------------------
 
 # a = ComplexF64(1,2)
 # b = ComplexF64(4,6)
