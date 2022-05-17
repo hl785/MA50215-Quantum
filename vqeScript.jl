@@ -4,12 +4,10 @@ using SciPy
 using LinearAlgebra
 include("main.jl")
 
-numQBits = 4
+numQBits = 1
 initReg = rBs0()^numQBits
-# x0 = [1.0, 0.0]
-# x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-# x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+x0 = zeros(2)
+x0[1] = 1
 # mtd = "Nelder-Mead"
 mtd = "COBYLA"
 
@@ -46,6 +44,10 @@ function uParam4QB(a::Array{Float64,1})::Opr
     return recurse(3, a[1], a[2], a[3:16], a[17:30], uParam3QB)
 end
 
+function uParam5QB(a::Array{Float64,1})::Opr
+    return recurse(4, a[1], a[2], a[3:32], a[33:62], uParam4QB)
+end
+
 function uParam(a::Array{Float64,1})::Opr
     if numQBits == 1
         @assert length(x0) == 2 "Wrong number of initial parameters"
@@ -59,6 +61,9 @@ function uParam(a::Array{Float64,1})::Opr
     elseif numQBits == 4
         @assert length(x0) == 30 "Wrong number of initial parameters"
         return uParam4QB(a)
+    elseif numQBits == 5
+        @assert length(x0) == 62 "Wrong number of initial parameters"
+        return uParam5QB(a)
     else
         @assert false "Not coded this number of QBits"
     end
@@ -82,7 +87,7 @@ function costNoOpt(a::Array{Float64,1})::Float64
     return cost(a, false)
 end
 
-res = SciPy.optimize.minimize(costNoOpt, x0, method = mtd, tol = 1e-24)
+res = SciPy.optimize.minimize(costNoOpt, x0, method = mtd, tol = 1e-24, options=Dict("maxiter"=>1e6))
 
 # Check
 eValRe = cost(res["x"], true)
