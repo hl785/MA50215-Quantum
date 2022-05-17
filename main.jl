@@ -292,3 +292,11 @@ function (^)(a::Ket, b::Int64)::Ket
     end
     return out
 end
+
+function (^)(a::Opr, b::Int64)::Opr
+    out = scalarArray(ComplexF64(1, 0))
+    for i = 1:b
+        out = out * a 
+    end
+    return out
+end
