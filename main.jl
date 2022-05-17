@@ -264,3 +264,31 @@ end
 function oprExpectation(a::Opr, b::Bra)::ComplexF64
     return oprExpectation(a,btk(b))
 end
+
+# create one Qbit register 
+function r1(a::ComplexF64, b::ComplexF64)::Ket
+    return Ket([a, b])
+end
+
+# create two Qbit register 
+function r2(a::ComplexF64, b::ComplexF64, c::ComplexF64, d::ComplexF64)::Ket
+    return Ket([a, b, c, d])
+end
+
+# create |0> register 
+function rBs0()::Ket
+    return r1(ComplexF64(1,0), ComplexF64(0,0))
+end
+
+# create |1> register 
+function rBs1()::Ket
+    return r1(ComplexF64(0,0), ComplexF64(1,0))
+end
+
+function (^)(a::Ket, b::Int64)::Ket
+    out = Ket([ComplexF64(1,0)])
+    for i = 1:b
+        out = out * a 
+    end
+    return out
+end
