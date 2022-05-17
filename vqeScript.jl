@@ -4,11 +4,12 @@ using SciPy
 using LinearAlgebra
 include("main.jl")
 
-numQBits = 3
+numQBits = 4
 initReg = rBs0()^numQBits
 # x0 = [1.0, 0.0]
 # x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+# x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+x0 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 # mtd = "Nelder-Mead"
 mtd = "COBYLA"
 
@@ -41,6 +42,10 @@ function uParam3QB(a::Array{Float64,1})::Opr
     return recurse(2, a[1], a[2], a[3:8], a[9:14], uParam2QB)
 end
 
+function uParam4QB(a::Array{Float64,1})::Opr
+    return recurse(3, a[1], a[2], a[3:16], a[17:30], uParam3QB)
+end
+
 function uParam(a::Array{Float64,1})::Opr
     if numQBits == 1
         @assert length(x0) == 2 "Wrong number of initial parameters"
@@ -51,6 +56,9 @@ function uParam(a::Array{Float64,1})::Opr
     elseif numQBits == 3
         @assert length(x0) == 14 "Wrong number of initial parameters"
         return uParam3QB(a)
+    elseif numQBits == 4
+        @assert length(x0) == 30 "Wrong number of initial parameters"
+        return uParam4QB(a)
     else
         @assert false "Not coded this number of QBits"
     end
