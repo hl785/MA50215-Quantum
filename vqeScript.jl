@@ -1,24 +1,18 @@
 using PosDefManifold
-using Plots
 using SciPy
 using LinearAlgebra
 include("main.jl")
 
-numQBits = 3
-initReg = rBs0()^numQBits
-x0 = zeros((2^(numQBits + 1) - 2))
-x0[1] = 1
-# mtd = "Nelder-Mead"
-mtd = "COBYLA"
+# -------------------------------
+#       (Quantum) Functions      
+# -------------------------------
 
-dimension = 2^numQBits
-H = randP(ComplexF64, dimension)
-hOpr = Opr(H)
-
+# Base case: minimal (size), maximally expressive (up to global phase) circuit for 1 Qbit.
 function uParam1QB(a::Array{Float64,1})::Opr
     return matmul(rotGate(paZ2(), a[2]), rotGate(paX2(), a[1]))
 end
 
+# Minimal, maximally expressive circuit for N+1 Qbits can be built up from two copies of the N Qbits circuit.
 function recurse(q::Int64, p1::Float64, p2::Float64, pc1::Array{Float64,1}, pc2::Array{Float64,1}, prevUParam)
     gate1::Opr = (rotGate(paZ2(), p1) * (eye2()^(q - 1))) * rotGate(paX2(), p2)
     subgate1::Opr = Opr(0.5 * (eye2().vals + paZ2().vals))
@@ -32,35 +26,43 @@ function recurse(q::Int64, p1::Float64, p2::Float64, pc1::Array{Float64,1}, pc2:
     return matmul(matmul(gate4, gate3), matmul(gate2, gate1))
 end
 
+# Basic recursive glue code.
 function uParam2QB(a::Array{Float64,1})::Opr
     return recurse(1, a[1], a[2], a[3:4], a[5:6], uParam1QB)
 end
 
+# Basic recursive glue code.
 function uParam3QB(a::Array{Float64,1})::Opr
     return recurse(2, a[1], a[2], a[3:8], a[9:14], uParam2QB)
 end
 
+# Basic recursive glue code.
 function uParam4QB(a::Array{Float64,1})::Opr
     return recurse(3, a[1], a[2], a[3:16], a[17:30], uParam3QB)
 end
 
+# Basic recursive glue code.
 function uParam5QB(a::Array{Float64,1})::Opr
     return recurse(4, a[1], a[2], a[3:32], a[33:62], uParam4QB)
 end
 
+# Basic recursive glue code.
 function uParam6QB(a::Array{Float64,1})::Opr
     return recurse(5, a[1], a[2], a[3:64], a[65:126], uParam5QB)
 end
 
+# Basic recursive glue code.
 function uParam7QB(a::Array{Float64,1})::Opr
     return recurse(6, a[1], a[2], a[3:128], a[129:254], uParam6QB)
 end
 
+# Basic recursive glue code.
 function uParam8QB(a::Array{Float64,1})::Opr
     return recurse(7, a[1], a[2], a[3:256], a[257:510], uParam7QB)
 end
 
-function uParam(a::Array{Float64,1})::Opr
+# Call different functions depending on variable.
+function uParam(a::Array{Float64,1}, numQBits::Int64)::Opr
     @assert length(x0) == (2^(numQBits + 1) - 2) "Wrong number of initial parameters"
     if numQBits == 1
         return uParam1QB(a)
@@ -84,11 +86,12 @@ function uParam(a::Array{Float64,1})::Opr
     return scalarArray(ComplexF64(1, 0)) # Dummy return hence choose simplest Opr.
 end
 
-function cost(a::Array{Float64,1}, initReg::Ket, hOpr::Opr, print::Bool)::Float64
-    register = initReg
-    uOpr = uParam(a)
-    register = uOpr * register
-    eVal = oprExpectation(hOpr, register)
+# An actual run of the Quantum circuit (with optional printouts).
+function cost(a::Array{Float64,1}, initReg::Ket, hOpr::Opr, numQBits::Int64, print::Bool)::Float64
+    register = initReg                          # Set up register.
+    uOpr = uParam(a, numQBits)                  # Get the appropriate (parameterised) circuit.
+    register = uOpr * register                  # Apply the circuit to the register.
+    eVal = oprExpectation(hOpr, register)       # Evaluate/take expectation with respect to H.
     if print
         println("Estimated eigenval:  ", eVal.re)
         println("Estimated eigenvec:  ", register.vals[1], ", ", register.vals[2])  # TODO: longer evals print
@@ -97,16 +100,34 @@ function cost(a::Array{Float64,1}, initReg::Ket, hOpr::Opr, print::Bool)::Float6
     return eVal.re
 end
 
+# ------------------
+#       Script      
+# ------------------
+
+# ----- Inputs -----
+numQBits = 1
+
+# ----- Setup -----
+initReg = rBs0()^numQBits                   # Must be unit Ket vector 
+x0 = zeros((2^(numQBits + 1) - 2))          # Params must be correct length
+mtd = "COBYLA"                              # Type of optimizer
+dimension = 2^numQBits                      # <-|
+H = randP(ComplexF64, dimension)            #   |-> Generate Hermitian matrix (find its smallest eval)
+hOpr = Opr(H)                               # <-|
+
+# ----- Capture variables in Lambda -----
 function costLam(a::Array{Float64,1})::Float64
-    return cost(a, initReg, hOpr, false)
+    return cost(a, initReg, hOpr, numQBits, false)
 end
 
+# ----- Classical Optimizer -----
 res = SciPy.optimize.minimize(costLam, x0, method = mtd, tol = 1e-48, options=Dict("maxiter"=>1e6))
 
-# Check
-eValRe = cost(res["x"], initReg, hOpr, true)
+# ----- Error check -----
+eValRe = cost(res["x"], initReg, hOpr, numQBits, true)
 trueEVal = eigvals(H, 1:1)[1]
 println("Calculated eigenval: ", trueEVal)
 println("Eigenval error:      ", abs(trueEVal - eValRe))
 
+# ----- Classical Optimizer Debug Info -----
 println(res)
