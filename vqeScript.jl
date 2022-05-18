@@ -6,7 +6,7 @@ include("main.jl")
 
 numQBits = 3
 initReg = rBs0()^numQBits
-x0 = zeros(14)
+x0 = zeros((2^(numQBits + 1) - 2))
 x0[1] = 1
 # mtd = "Nelder-Mead"
 mtd = "COBYLA"
@@ -61,37 +61,30 @@ function uParam8QB(a::Array{Float64,1})::Opr
 end
 
 function uParam(a::Array{Float64,1})::Opr
+    @assert length(x0) == (2^(numQBits + 1) - 2) "Wrong number of initial parameters"
     if numQBits == 1
-        @assert length(x0) == 2 "Wrong number of initial parameters"
         return uParam1QB(a)
     elseif numQBits == 2
-        @assert length(x0) == 6 "Wrong number of initial parameters"
         return uParam2QB(a)
     elseif numQBits == 3
-        @assert length(x0) == 14 "Wrong number of initial parameters"
         return uParam3QB(a)
     elseif numQBits == 4
-        @assert length(x0) == 30 "Wrong number of initial parameters"
         return uParam4QB(a)
     elseif numQBits == 5
-        @assert length(x0) == 62 "Wrong number of initial parameters"
         return uParam5QB(a)
     elseif numQBits == 6
-        @assert length(x0) == 126 "Wrong number of initial parameters"
         return uParam6QB(a)
     elseif numQBits == 7
-        @assert length(x0) == 254 "Wrong number of initial parameters"
         return uParam7QB(a)
     elseif numQBits == 8
-        @assert length(x0) == 510 "Wrong number of initial parameters"
         return uParam8QB(a)
     else
         @assert false "Not coded this number of QBits"
     end
-    return scalarArray(ComplexF64(1, 0))
+    return scalarArray(ComplexF64(1, 0)) # Dummy return hence choose simplest Opr.
 end
 
-function cost(a::Array{Float64,1}, print::Bool)::Float64
+function cost(a::Array{Float64,1}, initReg::Ket, hOpr::Opr, print::Bool)::Float64
     register = initReg
     uOpr = uParam(a)
     register = uOpr * register
@@ -104,14 +97,14 @@ function cost(a::Array{Float64,1}, print::Bool)::Float64
     return eVal.re
 end
 
-function costNoOpt(a::Array{Float64,1})::Float64
-    return cost(a, false)
+function costLam(a::Array{Float64,1})::Float64
+    return cost(a, initReg, hOpr, false)
 end
 
-res = SciPy.optimize.minimize(costNoOpt, x0, method = mtd, tol = 1e-48, options=Dict("maxiter"=>1e6))
+res = SciPy.optimize.minimize(costLam, x0, method = mtd, tol = 1e-48, options=Dict("maxiter"=>1e6))
 
 # Check
-eValRe = cost(res["x"], true)
+eValRe = cost(res["x"], initReg, hOpr, true)
 trueEVal = eigvals(H, 1:1)[1]
 println("Calculated eigenval: ", trueEVal)
 println("Eigenval error:      ", abs(trueEVal - eValRe))
