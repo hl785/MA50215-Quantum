@@ -2,6 +2,7 @@ using PosDefManifold
 using SciPy
 using LinearAlgebra
 include("main.jl")
+include("temp.jl")
 
 # -------------------------------
 #       (Quantum) Functions      
@@ -94,8 +95,8 @@ function cost(a::Array{Float64,1}, initReg::Ket, hOpr::Opr, numQBits::Int64, pri
     eVal = oprExpectation(hOpr, register)       # Evaluate/take expectation with respect to H.
     if print
         println("Estimated eigenval:  ", eVal.re)
-        println("Estimated eigenvec:  ", register.vals[1], ", ", register.vals[2])  # TODO: longer evals print
-        println("Eigenpair residual:  ", norm((hOpr * register).vals - (eVal.re * register.vals)))
+        # println("Estimated eigenvec:  ", register.vals[1], ", ", register.vals[2])  # TODO: longer evals print
+        # println("Eigenpair residual:  ", norm((hOpr * register).vals - (eVal.re * register.vals)))
     end
     return eVal.re
 end
@@ -105,14 +106,18 @@ end
 # ------------------
 
 # ----- Inputs -----
-numQBits = 1
+numQBits = 2
 
 # ----- Setup -----
 initReg = rBs0()^numQBits                   # Must be unit Ket vector 
 x0 = zeros((2^(numQBits + 1) - 2))          # Params must be correct length
-mtd = "COBYLA"                              # Type of optimizer
+mtd = "L-BFGS-B"                              # Type of optimizer
 dimension = 2^numQBits                      # <-|
-H = randP(ComplexF64, dimension)            #   |-> Generate Hermitian matrix (find its smallest eval)
+# H = randP(ComplexF64, dimension)            #   |-> Generate Hermitian matrix (find its smallest eval)
+H = Hermitian([1.84764+0.0im          0.481679-0.686225im  -0.0646636+0.376332im  -0.351826+0.00449551im;
+   0.481679+0.686225im      1.89892+0.0im        -0.347868-0.406104im   0.270096-0.473325im;
+ -0.0646636-0.376332im    -0.347868+0.406104im     1.38095+0.0im        0.104298+0.57518im;
+  -0.351826-0.00449551im   0.270096+0.473325im    0.104298-0.57518im     1.18633+0.0im])
 hOpr = Opr(H)                               # <-|
 
 # ----- Capture variables in Lambda -----
@@ -120,14 +125,32 @@ function costLam(a::Array{Float64,1})::Float64
     return cost(a, initReg, hOpr, numQBits, false)
 end
 
+# res = SciPy.optimize.minimize(costLam, x0, method = mtd, jac = jacFn, tol = 1e-36, options=Dict("maxiter"=>1e6))
+
+# for i = 1:10
+i = 1
+    # x0 = 2*pi*rand((2^(numQBits + 1) - 2))          # Params must be correct length
+
 # ----- Classical Optimizer -----
-res = SciPy.optimize.minimize(costLam, x0, method = mtd, tol = 1e-48, options=Dict("maxiter"=>1e6))
+println(length(x0))
+res = SciPy.optimize.minimize(costLam, x0, method = mtd, jac = jacFn, tol = 1e-36, options=Dict("maxiter"=>1e6))
+# res = SciPy.optimize.minimize(costLam, x0, method = mtd, tol = 1e-36, options=Dict("maxiter"=>1e6))
 
 # ----- Error check -----
 eValRe = cost(res["x"], initReg, hOpr, numQBits, true)
-trueEVal = eigvals(H, 1:1)[1]
-println("Calculated eigenval: ", trueEVal)
-println("Eigenval error:      ", abs(trueEVal - eValRe))
+println(length(res["x"]))
+trueEVals = eigvals(H, 1:2)
+trueEVal1 = trueEVals[1]
+trueEVal2 = trueEVals[2]
+println("Calculated eigenval: ", trueEVal1)
+println("Calculated eigenval2:", trueEVal2)
+println("Eigenval error:      ", abs(trueEVal1 - eValRe))
+println("Relative error:      ", abs(eValRe-trueEVal1)/abs(trueEVal1 - trueEVal2))
+println()
+println()
 
 # ----- Classical Optimizer Debug Info -----
-println(res)
+# println(res)
+
+# end
+println(length(res["x"]))
