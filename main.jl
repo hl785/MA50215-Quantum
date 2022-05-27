@@ -1,5 +1,9 @@
 import Base: ==, +, -, *, /, \, inv, ^, <, <=, <<, >>, %, ÷
 
+# ----------------------
+#       Structures      
+# ----------------------
+
 # row vector = bra
 mutable struct Bra
     vals::Array{ComplexF64, 1}
@@ -8,6 +12,11 @@ end
 # col vector = ket
 mutable struct Ket
     vals::Array{ComplexF64, 1}
+end 
+
+# matrix = operator (TODO: error with 1x1 Opr)
+mutable struct Opr
+    vals::Array{ComplexF64, 2}
 end 
 
 # bra to ket
@@ -19,6 +28,30 @@ end
 function ktb(a::Ket)::Bra
     return Bra(conj(a.vals))
 end
+
+# bra to operator
+function bto(a::Bra)::Opr
+    dim1::Int64 = size(a.vals,1)
+    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, 1, dim1)
+    for i = 1:dim1
+        arr[1,i] = a.vals[i]
+    end
+    return Opr(arr)
+end
+
+# ket to operator
+function kto(a::Ket)::Opr
+    dim1::Int64 = size(a.vals,1)
+    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, dim1, 1)
+    for i = 1:dim1
+        arr[i,1] = a.vals[i]
+    end
+    return Opr(arr)
+end
+
+# ---------------------
+#       Operators      
+# ---------------------
 
 # dot product 
 function (*)(a::Bra, b::Ket)::ComplexF64
@@ -53,11 +86,6 @@ function (*)(a::Bra, b::Bra)::Bra
     return ktb(btk(a)*btk(b))
 end 
 
-# matrix = operator (TODO: error with 1x1 Opr)
-mutable struct Opr
-    vals::Array{ComplexF64, 2}
-end 
-
 # tensor ket and bra 
 function (*)(a::Ket, b::Bra)::Opr
     dim1::Int64 = size(a.vals,1)
@@ -75,26 +103,6 @@ end
 function matmul(a::Opr, b::Opr)::Opr
     @assert size(a.vals,2) == size(b.vals,1) "Dimensions of matrix product disagree!"
     return Opr(a.vals * b.vals)
-end
-
-# bra to operator
-function bto(a::Bra)::Opr
-    dim1::Int64 = size(a.vals,1)
-    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, 1, dim1)
-    for i = 1:dim1
-        arr[1,i] = a.vals[i]
-    end
-    return Opr(arr)
-end
-
-# ket to operator
-function kto(a::Ket)::Opr
-    dim1::Int64 = size(a.vals,1)
-    arr::Array{ComplexF64, 2} = Array{ComplexF64, 2}(undef, dim1, 1)
-    for i = 1:dim1
-        arr[i,1] = a.vals[i]
-    end
-    return Opr(arr)
 end
 
 # row matrix mult
@@ -137,46 +145,25 @@ function (*)(a::ComplexF64, b::Opr)::Opr
     return Opr(a .* b.vals)
 end 
 
-# create 2x2 operator
-function mat2(a::ComplexF64, b::ComplexF64, c::ComplexF64, d::ComplexF64)::Opr
-    return Opr([a b; c d])
+function (^)(a::Ket, b::Int64)::Ket
+    out = Ket([ComplexF64(1,0)])
+    for i = 1:b
+        out = out * a 
+    end
+    return out
 end
 
-# create 2x2 identity
-function eye2()::Opr
-    a::ComplexF64 = ComplexF64(1,0)
-    b::ComplexF64 = ComplexF64(0,0)
-    return mat2(a, b, b, a)
+function (^)(a::Opr, b::Int64)::Opr
+    out = scalarArray(ComplexF64(1, 0))
+    for i = 1:b
+        out = out * a 
+    end
+    return out
 end
 
-# create hadamard gate 
-function had2()::Opr
-    nrm::ComplexF64 = ComplexF64(1/sqrt(2), 0)
-    op::Opr = mat2(ComplexF64(1,0), ComplexF64(1,0), ComplexF64(1,0), ComplexF64(-1,0))
-    return nrm*op
-end
-
-# create pauli X gate 
-function paX2()::Opr
-    a::ComplexF64 = ComplexF64(0,0)
-    b::ComplexF64 = ComplexF64(1,0)
-    return mat2(a, b, b, a)
-end
-
-# create pauli Y gate 
-function paY2()::Opr
-    a::ComplexF64 = ComplexF64(0,0)
-    b::ComplexF64 = ComplexF64(0,1)
-    return mat2(a, b, b, a)
-end
-
-# create pauli Z gate 
-function paZ2()::Opr
-    a::ComplexF64 = ComplexF64(1,0)
-    b::ComplexF64 = ComplexF64(0,0)
-    c::ComplexF64 = ComplexF64(-1,0)
-    return mat2(a, b, b, c)
-end
+# --------------------
+#       Key Code      
+# --------------------
 
 # prob measure Ket vector
 function pMeas(a::Ket)::Array{Float64, 1}
@@ -218,11 +205,6 @@ function oprExp(a::Opr)::Opr
     return Opr(exp(a.vals))
 end
 
-function scalarArray(a::ComplexF64)::Opr
-    arr::Array{ComplexF64, 2} = [a][:,:]       # Hack to allow 1 by 1 matrix
-    return Opr(arr)
-end
-
 function rotGate(a::Opr, ang::ComplexF64)::Opr
     out = scalarArray(ComplexF64(0,-0.5)*ang)
     out = out * a
@@ -231,6 +213,66 @@ end
 
 function rotGate(a::Opr, ang::Float64)::Opr
     return rotGate(a, ComplexF64(ang,0))
+end
+
+# TODO: check is real (i.e. return Float64)
+function oprExpectation(a::Opr, b::Ket)::ComplexF64
+    return ktb(b)*(a*b)
+end
+
+# TODO: check is real (i.e. return Float64)
+function oprExpectation(a::Opr, b::Bra)::ComplexF64
+    return oprExpectation(a,btk(b))
+end
+
+# -------------------
+#       Helpers      
+# -------------------
+
+# create 2x2 operator
+function mat2(a::ComplexF64, b::ComplexF64, c::ComplexF64, d::ComplexF64)::Opr
+    return Opr([a b; c d])
+end
+
+# create 2x2 identity
+function eye2()::Opr
+    a::ComplexF64 = ComplexF64(1,0)
+    b::ComplexF64 = ComplexF64(0,0)
+    return mat2(a, b, b, a)
+end
+
+# create hadamard gate 
+function had2()::Opr
+    nrm::ComplexF64 = ComplexF64(1/sqrt(2), 0)
+    op::Opr = mat2(ComplexF64(1,0), ComplexF64(1,0), ComplexF64(1,0), ComplexF64(-1,0))
+    return nrm*op
+end
+
+# create pauli X gate 
+function paX2()::Opr
+    a::ComplexF64 = ComplexF64(0,0)
+    b::ComplexF64 = ComplexF64(1,0)
+    return mat2(a, b, b, a)
+end
+
+# create pauli Y gate 
+function paY2()::Opr
+    a::ComplexF64 = ComplexF64(0,0)
+    b::ComplexF64 = ComplexF64(0,1)
+    return mat2(a, b, b, a)
+end
+
+# create pauli Z gate 
+function paZ2()::Opr
+    a::ComplexF64 = ComplexF64(1,0)
+    b::ComplexF64 = ComplexF64(0,0)
+    c::ComplexF64 = ComplexF64(-1,0)
+    return mat2(a, b, b, c)
+end
+
+function scalarArray(a::ComplexF64)::Opr
+    arr::Array{ComplexF64, 2} = [a][:,:]       # Hack to allow 1 by 1 matrix
+    return Opr(arr)
 end
 
 function CNot(cont::Int64, targ::Int64, dim::Int64)::Opr
@@ -255,16 +297,6 @@ function CNot(cont::Int64, targ::Int64, dim::Int64)::Opr
     return Opr(lhs.vals + rhs.vals)
 end
 
-# TODO: check is real (i.e. return Float64)
-function oprExpectation(a::Opr, b::Ket)::ComplexF64
-    return ktb(b)*(a*b)
-end
-
-# TODO: check is real (i.e. return Float64)
-function oprExpectation(a::Opr, b::Bra)::ComplexF64
-    return oprExpectation(a,btk(b))
-end
-
 # create one Qbit register 
 function r1(a::ComplexF64, b::ComplexF64)::Ket
     return Ket([a, b])
@@ -283,20 +315,4 @@ end
 # create |1> register 
 function rBs1()::Ket
     return r1(ComplexF64(0,0), ComplexF64(1,0))
-end
-
-function (^)(a::Ket, b::Int64)::Ket
-    out = Ket([ComplexF64(1,0)])
-    for i = 1:b
-        out = out * a 
-    end
-    return out
-end
-
-function (^)(a::Opr, b::Int64)::Opr
-    out = scalarArray(ComplexF64(1, 0))
-    for i = 1:b
-        out = out * a 
-    end
-    return out
 end
